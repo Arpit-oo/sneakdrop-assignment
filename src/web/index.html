@@ -1,0 +1,841 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>sneakdrop</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 16 16%27%3E%3Ccircle cx=%278%27 cy=%278%27 r=%277%27 fill=%27%23fb923c%27/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,200..800&family=Fraunces:opsz,wght,SOFT,WONK@9..144,100..900,0..100,0..1&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --background: #f5f0e6;
+    --foreground: #1a1a18;
+    --card: #ffffff;
+    --muted: #ede7d8;
+    --muted-foreground: #6b6a64;
+    --hairline: rgba(0, 0, 0, 0.08);
+    --hairline-soft: rgba(0, 0, 0, 0.05);
+
+    --orange: #fb923c;      /* surfaces */
+    --orange-ink: #c2410c;  /* orange text on light surfaces (≥4.5:1 on cream) */
+    --red: #dc2626;         /* surfaces carrying white text (4.8:1) */
+    --red-bright: #ef4444;  /* red figures on charcoal */
+    --green: #166534;
+    --teal: #2dd4bf;
+    --blue: #2563eb;
+    --charcoal: #0a0a0c;
+    --cream: #f5f0e6;
+
+    --font-sans: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
+    --font-display: "Fraunces", ui-serif, Georgia, serif;
+    --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+    color-scheme: light; /* light only, like the reference */
+  }
+  * { box-sizing: border-box; scrollbar-width: none; }
+  [hidden] { display: none !important; }
+  ::-webkit-scrollbar { display: none; }
+  ::selection { background: var(--orange); color: var(--charcoal); }
+  html, body { margin: 0; }
+  body {
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    font-size: 16.5px;
+    line-height: 1.6;
+    font-variation-settings: "wght" 460, "wdth" 96;
+    letter-spacing: -0.005em;
+    -webkit-font-smoothing: antialiased;
+    caret-color: var(--orange-ink);
+    min-height: 100vh;
+  }
+  /* paper grain */
+  body::before {
+    content: ''; position: fixed; inset: 0; z-index: 9999; pointer-events: none; opacity: 0.05;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size: 256px 256px;
+  }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); border: 0; }
+
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 0 16px 48px; }
+
+  /* ---------- header ---------- */
+  header {
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    padding: 22px 0 18px; border-bottom: 1px solid color-mix(in srgb, var(--orange) 55%, transparent);
+    flex-wrap: wrap;
+  }
+  .brand { font-size: 24px; font-variation-settings: "wght" 760, "wdth" 92; letter-spacing: -0.04em; }
+  .brand i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--orange); margin-left: 2px; }
+  .head-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .who {
+    display: flex; align-items: center; gap: 8px; padding: 4px 4px 4px 16px; border-radius: 999px;
+    background: var(--card); box-shadow: 0 1px 0 var(--hairline-soft);
+  }
+  .who input {
+    border: 0; background: var(--muted); color: var(--foreground); font: inherit; font-size: 14px;
+    font-variation-settings: "wght" 620; border-radius: 999px; padding: 0 14px; height: 44px; width: 140px;
+  }
+  .live {
+    display: inline-flex; align-items: center; gap: 8px; padding: 16px 18px; line-height: 1.2; border-radius: 999px;
+    background: var(--card); font-size: 12px; font-variation-settings: "wght" 620;
+    text-transform: uppercase; letter-spacing: 0.14em;
+  }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted-foreground); position: relative; }
+  .dot.ping::after {
+    content: ''; position: absolute; inset: 0; border-radius: 50%; background: inherit;
+    animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+  }
+  @keyframes ping { 0% { transform: scale(1); opacity: 1; } 75%, 100% { transform: scale(2.2); opacity: 0; } }
+
+  .label, .who label {
+    font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.14em;
+    color: var(--muted-foreground); font-variation-settings: "wght" 640, "wdth" 100;
+  }
+
+  h1 {
+    margin: 36px 0 8px; font-size: clamp(2rem, 4.4vw, 3.1rem); line-height: 1.02; letter-spacing: -0.04em;
+    font-variation-settings: "wght" 760, "wdth" 90, "opsz" 48; text-wrap: balance;
+  }
+  h1 em { font-style: normal; color: var(--orange-ink); }
+  .lede { color: var(--muted-foreground); max-width: 62ch; margin: 0 0 28px; }
+  .lede b { color: var(--foreground); font-variation-settings: "wght" 640; font-weight: inherit; }
+
+  /* ---------- shared tile ---------- */
+  .bento {
+    position: relative; background: var(--bg, var(--card)); color: var(--fg, var(--foreground));
+    border-radius: 28px; padding: 24px; overflow: hidden;
+    display: flex; flex-direction: column;
+    box-shadow: 0 1px 0 var(--hairline-soft);
+    transition: background-color 400ms var(--ease-out), color 400ms var(--ease-out);
+  }
+  .bento .top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+  .sticker {
+    display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 5px 12px;
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.14em; font-variation-settings: "wght" 700;
+    background: #fff; color: var(--charcoal); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08); white-space: nowrap;
+  }
+  .sticker.dark { background: var(--charcoal); color: var(--cream); }
+  .tilt-l { transform: rotate(-3deg); }
+  .tilt-r { transform: rotate(2deg); }
+  .big {
+    font-family: var(--font-display); font-weight: 500; line-height: 0.82; letter-spacing: -0.04em;
+    font-variation-settings: "SOFT" 50, "WONK" 0, "opsz" 144;
+    font-feature-settings: "tnum" on, "lnum" on;
+  }
+  .big small { font-size: 0.42em; letter-spacing: -0.02em; opacity: 0.6; }
+  .foot {
+    margin-top: 12px; font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.14em;
+    font-variation-settings: "wght" 640; color: color-mix(in srgb, var(--fg, var(--foreground)) 78%, var(--bg, #fff));
+  }
+
+  /* ---------- buttons ---------- */
+  button {
+    font: inherit; border: 0; cursor: pointer; min-height: 48px; border-radius: 999px; padding: 12px 22px;
+    font-size: 15px; font-variation-settings: "wght" 660; letter-spacing: -0.01em;
+    transition: opacity 150ms, transform 150ms var(--ease-out), background-color 300ms;
+    background: var(--charcoal); color: var(--cream); display: inline-flex; align-items: center; gap: 10px;
+  }
+  button:hover:not(:disabled) { transform: translateY(-1px); }
+  button:active:not(:disabled) { transform: translateY(0); }
+  button:disabled { cursor: progress; opacity: 0.7; }
+  button.primary { font-size: 17px; padding: 16px 28px; min-height: 58px; font-variation-settings: "wght" 740; }
+  button.primary .arrow {
+    display: inline-grid; place-items: center; width: 30px; height: 30px; border-radius: 50%;
+    background: rgba(0, 0, 0, 0.12); transition: transform 200ms var(--ease-out);
+  }
+  button.primary:hover:not(:disabled) .arrow { transform: translateX(3px); }
+  button.ghost { background: transparent; color: inherit; box-shadow: inset 0 0 0 1.5px currentColor; }
+  :focus-visible { outline: 3px solid var(--focus, var(--charcoal)); outline-offset: 3px; }
+
+  /* ---------- the stage: the one place you act ---------- */
+  .stage {
+    --bg: var(--card); --fg: var(--foreground);
+    display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 24px 40px; align-items: end;
+    padding: 32px 36px; min-height: 352px; border-radius: 32px;
+  }
+  .stage-copy { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; min-width: 0; }
+  .stage h2 {
+    margin: 12px 0 0; font-size: clamp(1.9rem, 3.6vw, 2.8rem); line-height: 1.02; letter-spacing: -0.04em;
+    font-variation-settings: "wght" 740, "wdth" 92, "opsz" 40; text-wrap: balance;
+  }
+  .stage-text { margin: 0; max-width: 46ch; font-size: 16.5px; color: color-mix(in srgb, var(--fg) 80%, var(--bg)); }
+  .stage .actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 14px; }
+  .stage-figure { display: flex; flex-direction: column; align-items: flex-end; gap: 14px; min-width: 0; }
+  .stage .big { font-size: clamp(88px, 13vw, 176px); white-space: nowrap; }
+  .stage .big.word { padding-bottom: 0.2em; margin-bottom: -0.12em; } /* room for descenders ("yours.") */
+  .bar { width: 100%; min-width: 220px; height: 8px; border-radius: 99px; background: color-mix(in srgb, var(--fg) 14%, transparent); overflow: hidden; }
+  .bar > div { height: 100%; width: 100%; background: currentColor; border-radius: 99px; transform-origin: left; transform: scaleX(0); transition: transform 250ms linear; }
+  .msg { margin: 6px 0 0; min-height: 1.5em; font-size: 14.5px; font-variation-settings: "wght" 580; }
+  .demo { font-size: 13px; display: inline-flex; gap: 8px; align-items: center; min-height: 44px; cursor: pointer; }
+  .demo input { width: 18px; height: 18px; accent-color: var(--charcoal); }
+
+  .stage[data-mode="open"]     .primary { background: var(--orange); color: var(--charcoal); }
+  .stage[data-mode="open"]     .big { color: var(--charcoal); }
+  .stage[data-mode="hold"]     { --bg: var(--orange); --fg: var(--charcoal); }
+  .stage[data-mode="urgent"]   { --bg: var(--red); --fg: #fff; --focus: #fff; }
+  .stage[data-mode="urgent"] .primary { background: #fff; color: var(--red); }
+  .stage[data-mode="soldout"]  { --bg: var(--charcoal); --fg: var(--cream); --focus: var(--orange); }
+  .stage[data-mode="soldout"]  .big { color: var(--red-bright); }
+  .stage[data-mode="soldout"]  .primary { background: var(--orange); color: var(--charcoal); }
+  .stage[data-mode="line"]     { --bg: var(--blue); --fg: #fff; --focus: #fff; }
+  .stage[data-mode="paid"],
+  .stage[data-mode="done"]     { --bg: var(--teal); --fg: #0a0a08; }
+  .stage[data-mode="lost"]     { --bg: var(--red); --fg: #fff; --focus: #fff; }
+  .stage[data-mode="lost"] .primary { background: #fff; color: var(--red); }
+  .stage[data-mode="loading"] .big { opacity: 0.2; }
+
+  /* the one authored moment: the figure settles in whenever the stage changes state */
+  .stage.enter .big { animation: settle 700ms var(--ease-out); }
+  @keyframes settle { from { transform: translateY(14px) scale(0.96); opacity: 0.2; filter: blur(6px); } to { transform: none; opacity: 1; filter: none; } }
+
+  /* ---------- supporting tiles ---------- */
+  .tiles { display: grid; gap: 16px; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 16px; }
+  .tile { min-height: 216px; }
+  .tile .fill { flex: 1; display: flex; align-items: flex-end; margin-top: 14px; }
+  .tile .big { font-size: clamp(64px, 7vw, 96px); }
+  .t-stock { --bg: var(--orange); --fg: var(--charcoal); }
+  .t-stock.soldout { --bg: var(--charcoal); --fg: var(--cream); }
+  .t-stock.soldout .big { color: var(--red-bright); }
+  .t-stock.soldout .sticker.dark { background: var(--red); color: #fff; }
+  .t-line .big { color: var(--blue); }
+  .t-mine { --bg: var(--teal); --fg: #0a0a08; }
+
+  .lower { display: grid; gap: 16px; grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 16px; }
+  .slots { display: grid; grid-template-columns: repeat(10, 1fr); gap: 8px; margin-top: 18px; }
+  .slot { aspect-ratio: 1; border-radius: 12px; box-shadow: inset 0 0 0 1.5px var(--hairline); transition: background-color 400ms var(--ease-out); }
+  .slot.held { background: var(--orange); box-shadow: none; }
+  .slot.sold { background: var(--charcoal); box-shadow: none; }
+  .legend { display: flex; gap: 18px; margin-top: 16px; flex-wrap: wrap; }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted-foreground); }
+  .legend i { width: 12px; height: 12px; border-radius: 4px; display: inline-block; box-shadow: inset 0 0 0 1.5px var(--hairline); }
+
+  .feed ol { list-style: none; margin: 10px 0 0; padding: 0; overflow-y: auto; max-height: 280px;
+    mask-image: linear-gradient(to bottom, black 85%, transparent 100%); }
+  .feed li { display: flex; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--hairline-soft); font-size: 15px; animation: in 0.4s var(--ease-out); }
+  .feed time { font-size: 12px; color: var(--muted-foreground); min-width: 68px; padding-top: 2px; font-feature-settings: "tnum" on; }
+  .feed .tag { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-top: 8px; flex: none; }
+  .feed .empty { color: var(--muted-foreground); padding: 12px 0; border: 0; }
+  @keyframes in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+  footer { margin-top: 24px; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+  footer a {
+    color: var(--foreground); display: inline-flex; align-items: center; min-height: 44px; padding: 0 18px;
+    border-radius: 999px; background: var(--card); text-decoration: none; font-size: 14px; font-variation-settings: "wght" 620;
+  }
+  footer a:hover { background: var(--muted); }
+
+  @media (max-width: 960px) {
+    .tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+    .tile { min-height: 180px; padding: 20px; }
+    .tile .big { font-size: clamp(48px, 9vw, 72px); }
+    .lower { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 640px) {
+    h1 { margin-top: 24px; }
+    .stage { grid-template-columns: 1fr; padding: 24px; min-height: 0; border-radius: 22px; gap: 18px; }
+    .stage-figure { order: -1; align-items: flex-start; }
+    .stage .big { font-size: clamp(72px, 24vw, 112px); }
+    .stage .actions { width: 100%; }
+    .stage .actions button.primary { flex: 1; justify-content: center; }
+    .bar { min-width: 0; }
+    .tiles { gap: 10px; }
+    .tile { min-height: 0; padding: 16px; border-radius: 18px; }
+    .tile .sticker { font-size: 11px; padding: 4px 9px; letter-spacing: 0.1em; }
+    .tile .top .sticker.dark { display: none; }
+    .tile .big { font-size: clamp(40px, 13vw, 56px); }
+    .tile .foot { font-size: 11px; letter-spacing: 0.08em; }
+    .bento.lower-tile { border-radius: 20px; padding: 20px; }
+    .who input { width: 110px; }
+  }
+
+  /* custom cursor — ported from the reference (et/components/decorations/custom-cursor.tsx) */
+  @media (pointer: fine) {
+    .cursor-ready { cursor: default; }
+    .custom-cursor {
+      position: fixed; width: 8px; height: 8px; background: #1a1a18; border-radius: 50%;
+      pointer-events: none; z-index: 9; transform: translate(-50%, -50%) scale(var(--s, 1)); mix-blend-mode: exclusion;
+      transition: transform 0.2s, opacity 0.15s;
+    }
+    .custom-cursor-ring {
+      position: fixed; width: 28px; height: 28px; border: 1.5px solid #1a1a18; border-radius: 50%;
+      pointer-events: none; z-index: 8; opacity: 0.15; transform: translate(-50%, -50%) scale(var(--s, 1));
+      transition: transform 0.3s, opacity 0.15s;
+    }
+  }
+  @media (pointer: coarse) {
+    .custom-cursor, .custom-cursor-ring { display: none !important; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">sneakdrop<i></i></div>
+    <div class="head-right">
+      <form class="who" id="whoForm">
+        <label for="who">you are</label>
+        <input id="who" autocomplete="off" spellcheck="false" aria-describedby="whoHint">
+        <span id="whoHint" class="sr-only">type a name and press enter to switch user</span>
+      </form>
+      <span class="live" id="live" role="status"><span class="dot" id="liveDot"></span><span id="liveText">connecting</span></span>
+    </div>
+  </header>
+
+  <main>
+    <h1 id="headline">one drop. <em>no oversell.</em></h1>
+    <p class="lede" id="lede">Hold a pair, then pay before the clock runs out — or it goes to the next person in line.</p>
+
+    <!-- the one place you act; colour, figure and buttons follow your state -->
+    <section class="bento stage" id="stage" data-mode="loading" aria-labelledby="stageTitle">
+      <div class="stage-copy">
+        <span class="sticker tilt-l" id="stageTag">loading</span>
+        <h2 id="stageTitle">one moment…</h2>
+        <p class="stage-text" id="stageText">&nbsp;</p>
+        <div class="actions">
+          <button class="primary" id="primaryBtn" hidden><span id="primaryLabel"></span><span class="arrow" aria-hidden="true">→</span></button>
+          <button class="ghost" id="secondaryBtn" hidden></button>
+          <label class="demo" id="demoWrap" hidden><input type="checkbox" id="forceFail"> demo: make this payment fail</label>
+        </div>
+        <p class="msg" id="msg" role="status" aria-live="polite"></p>
+      </div>
+      <div class="stage-figure">
+        <span class="big" id="stageBig" aria-hidden="true">–</span>
+        <div class="bar" id="stageBar" hidden><div id="holdBar"></div></div>
+      </div>
+    </section>
+    <div class="sr-only" id="announce" aria-live="assertive"></div>
+
+    <!-- supporting evidence, no controls -->
+    <section class="tiles" aria-label="sale at a glance">
+      <article class="bento tile t-stock" id="tStock">
+        <div class="top">
+          <span class="sticker tilt-l">pairs left</span>
+          <span class="sticker dark tilt-r" id="stockState">on sale</span>
+        </div>
+        <div class="fill"><span class="big" id="available">–</span></div>
+        <div class="foot" id="stockFoot">&nbsp;</div>
+      </article>
+
+      <article class="bento tile t-line" id="tLine">
+        <div class="top"><span class="sticker tilt-l">the line</span></div>
+        <div class="fill"><span class="big" id="lineBig">–</span></div>
+        <div class="foot" id="lineFoot">&nbsp;</div>
+      </article>
+
+      <article class="bento tile t-mine">
+        <div class="top">
+          <span class="sticker tilt-l">yours</span>
+          <span class="sticker dark tilt-r" id="mineState">none yet</span>
+        </div>
+        <div class="fill"><span class="big"><span id="bought">0</span><small>/<span id="maxPer">2</span></small></span></div>
+        <div class="foot">bought · max per person</div>
+      </article>
+    </section>
+
+    <section class="lower">
+      <article class="bento lower-tile board">
+        <div class="top">
+          <span class="label">every pair, live</span>
+          <span class="label" id="boardCount"></span>
+        </div>
+        <div class="slots" id="slots" role="img" aria-label="pairs board"></div>
+        <div class="legend" aria-hidden="true">
+          <span><i style="background: var(--charcoal); box-shadow: none"></i>sold</span>
+          <span><i style="background: var(--orange); box-shadow: none"></i>held</span>
+          <span><i></i>free</span>
+        </div>
+      </article>
+
+      <article class="bento lower-tile feed">
+        <div class="top"><span class="label">what happened to you</span></div>
+        <ol id="feed"><li class="empty">nothing yet.</li></ol>
+      </article>
+    </section>
+  </main>
+
+  <footer>
+    <a id="otherTab" href="#" target="_blank" rel="noopener">open another tab as someone else</a>
+    <span class="label" id="syncInfo"></span>
+  </footer>
+</div>
+
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+
+  // ---------- who am I ----------
+  const params = new URLSearchParams(location.search);
+  const demo = params.has('demo');
+  let userId = (params.get('user') || '').trim();
+  if (!userId) {
+    userId = 'guest-' + Math.random().toString(36).slice(2, 6);
+    params.set('user', userId);
+    history.replaceState(null, '', '?' + params);
+  }
+  $('who').value = userId;
+  $('whoForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const next = $('who').value.trim();
+    if (!next || next === userId) return;
+    const q = new URLSearchParams({ user: next });
+    if (demo) q.set('demo', '1');
+    location.search = '?' + q;
+  });
+  const names = ['alice', 'bob', 'carol', 'dave', 'erin', 'frank'];
+  const other = names.find((n) => n !== userId) || 'bob';
+  $('otherTab').href = '?user=' + other + (demo ? '&demo=1' : '');
+  $('otherTab').textContent = `open another tab as ${other} ↗`;
+
+  // ---------- state ----------
+  let state = null;
+  let clockOffset = 0;   // server time − local time
+  let pendingPay = null; // holdId waiting on a webhook
+  let iCancelled = null; // holdId the user released themselves
+  let outcome = null;    // { mode, tag, title, text, big } shown after a hold ends
+  let lastMode = '';
+  let warned = {};       // countdown thresholds already announced, per hold
+
+  const fmtMoney = (c) => '$' + (c / 100).toFixed(c % 100 ? 2 : 0);
+  const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
+  const now = () => Date.now() + clockOffset;
+  const minsText = (s) => s % 60 === 0 ? plural(s / 60, 'minute', 'minutes') : plural(Math.round(s / 6) / 10, 'minute', 'minutes');
+
+  function apply(next) {
+    clockOffset = new Date(next.serverTime).getTime() - Date.now();
+    diff(state, next);
+    state = next;
+    render();
+  }
+
+  function announce(text) {
+    $('announce').textContent = '';
+    setTimeout(() => ($('announce').textContent = text), 50);
+  }
+  function say(text, tone = '') {
+    const m = $('msg');
+    m.textContent = text;
+    m.style.color = tone === 'err' ? 'inherit' : '';
+    m.style.fontVariationSettings = tone === 'err' ? '"wght" 700' : '';
+  }
+
+  // ---------- feed (kept per user for this browser session) ----------
+  const FEED_KEY = 'sneakdrop-feed:' + userId;
+  const COLORS = { good: 'var(--green)', warn: 'var(--orange)', bad: 'var(--red)', info: 'var(--blue)', ink: 'var(--foreground)' };
+  let feed = [];
+  try { feed = JSON.parse(sessionStorage.getItem(FEED_KEY) || '[]'); } catch { feed = []; }
+  function drawFeed() {
+    const ol = $('feed');
+    ol.innerHTML = '';
+    if (!feed.length) {
+      ol.innerHTML = '<li class="empty">nothing yet.</li>';
+      return;
+    }
+    for (const f of feed) {
+      const li = document.createElement('li');
+      const t = document.createElement('time');
+      t.textContent = new Date(f.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      const dot = document.createElement('span');
+      dot.className = 'tag';
+      dot.style.background = COLORS[f.tone];
+      const span = document.createElement('span');
+      span.textContent = f.text;
+      li.append(t, dot, span);
+      ol.append(li);
+    }
+  }
+  function log(text, tone = 'ink') {
+    feed.unshift({ at: Date.now(), text, tone });
+    feed.length = Math.min(feed.length, 40);
+    try { sessionStorage.setItem(FEED_KEY, JSON.stringify(feed)); } catch {}
+    drawFeed();
+  }
+  drawFeed();
+
+  // ---------- what changed for me ----------
+  function diff(prev, next) {
+    if (!prev) {
+      // arriving (or reloading) right after a payment settled: still show how it ended
+      const lp = next.me.lastPayment;
+      if (lp && !next.me.hold && Date.parse(next.serverTime) - Date.parse(lp.at) < 120_000) {
+        const o = lp.outcome || '';
+        if (o === 'paid' || o === 'late_paid') outcome = { mode: 'paid', tag: 'paid', title: "it's yours.", text: 'payment confirmed. your order is in.', big: 'yours.' };
+        else if (o === 'released') outcome = { mode: 'lost', tag: 'payment failed', title: 'payment failed.', text: 'your card was declined, so the pair went back — to the next person in line if anyone was waiting.', big: 'gone.' };
+        else if (o.startsWith('refund_required')) outcome = { mode: 'lost', tag: 'refund', title: 'payment came too late.', text: 'the pair was already gone, so your payment will be refunded.', big: 'gone.' };
+      }
+      return;
+    }
+    const a = prev.me, b = next.me;
+    const mins = minsText(next.product.holdSeconds);
+
+    if (!a.hold && b.hold) {
+      outcome = null;
+      warned = {};
+      $('forceFail').checked = false; // demo toggle never carries over to a new hold
+      say('');
+      if (b.hold.source === 'waitlist') {
+        log(`you're up — a pair came to you from the line. ${mins} to pay.`, 'warn');
+        announce(`You're up. A pair came to you from the line. You have ${mins} to pay.`);
+      } else {
+        log(`pair held. ${mins} to pay.`, 'warn');
+        announce(`Pair held. You have ${mins} to pay.`);
+      }
+    }
+    if (a.hold && (!b.hold || b.hold.id !== a.hold.id)) {
+      const lp = b.lastPayment;
+      say('');
+      if (b.bought > a.bought) {
+        outcome = { mode: 'paid', tag: 'paid', title: "it's yours.", text: `payment confirmed · ${fmtMoney(next.product.priceCents)}. your order is in.`, big: 'yours.' };
+        log("payment confirmed — the pair is yours", 'good');
+        announce("Payment confirmed. The pair is yours.");
+      } else if (lp && lp.holdId === a.hold.id && lp.outcome === 'released') {
+        outcome = { mode: 'lost', tag: 'payment failed', title: 'payment failed.', text: 'your card was declined, so the pair went back — to the next person in line if anyone was waiting.', big: 'gone.' };
+        log('payment failed — your pair was released', 'bad');
+        announce('Payment failed. Your pair was released.');
+      } else if (iCancelled === a.hold.id) {
+        outcome = null;
+        log('you released your hold', 'ink');
+      } else {
+        outcome = { mode: 'lost', tag: 'time ran out', title: 'time ran out.', text: 'the hold expired before payment, so the pair went back.', big: 'gone.' };
+        log('time ran out — your pair went back', 'bad');
+        announce('Time ran out. Your pair went back.');
+      }
+      if (pendingPay === a.hold.id) pendingPay = null;
+    }
+    if (b.bought > a.bought && !(a.hold && !b.hold)) {
+      outcome = { mode: 'paid', tag: 'paid', title: "it's yours.", text: 'your late payment still went through.', big: 'yours.' };
+      log('late payment accepted — the pair is yours', 'good');
+      announce('Late payment accepted. The pair is yours.');
+    }
+    if (b.lastPayment && (!a.lastPayment || a.lastPayment.at !== b.lastPayment.at)) {
+      const o = b.lastPayment.outcome || '';
+      if (o.startsWith('refund_required')) {
+        outcome = { mode: 'lost', tag: 'refund', title: 'payment came too late.', text: 'the pair was already gone, so your payment will be refunded.', big: 'gone.' };
+        log('payment arrived too late — refund flagged', 'bad');
+        announce('Your payment arrived too late. It will be refunded.');
+      }
+    }
+    if (!a.position && b.position && !b.hold) { log(`joined the line at #${b.position}`, 'info'); }
+    if (a.position && b.position && b.position < a.position) { log(`moved up to #${b.position}`, 'info'); announce(`You moved up to number ${b.position} in line.`); }
+    if (a.position && !b.position && !b.hold && !(b.bought > a.bought)) log('you left the line', 'ink');
+    if (prev.product.available > 0 && next.product.available === 0) log('sold out', 'ink');
+    if (prev.product.available === 0 && next.product.available > 0) log(`${plural(next.product.available, 'pair', 'pairs')} back on sale`, 'warn');
+  }
+
+  // ---------- render ----------
+  function modeFor(p, me) {
+    if (me.hold) return 'hold';
+    if (outcome) return outcome.mode;
+    if (me.bought >= p.maxPerUser) return 'done';
+    if (me.position) return 'line';
+    if (p.available <= 0) return 'soldout';
+    return 'open';
+  }
+
+  function render() {
+    if (!state) return;
+    const p = state.product, me = state.me;
+    const soldOut = p.available <= 0;
+    const price = fmtMoney(p.priceCents);
+    const mins = minsText(p.holdSeconds);
+    const canBuyMore = me.bought < p.maxPerUser;
+
+    $('headline').innerHTML = soldOut
+      ? (p.sold >= p.total ? 'all gone. <em>every pair sold.</em>' : 'sold out. <em>for now.</em>')
+      : `${p.total} pairs. one drop. <em>no oversell.</em>`;
+    $('lede').innerHTML = '';
+    $('lede').append(
+      Object.assign(document.createElement('b'), { textContent: `${p.name} · ${price}.` }),
+      ` Hold a pair, then pay within ${mins} — or it goes to the next person in line. Max ${p.maxPerUser} per person.`,
+    );
+
+    // ---- stage ----
+    const mode = modeFor(p, me);
+    const stage = $('stage');
+    const s = { tag: '', title: '', text: '', big: '', primary: null, secondary: null, bar: false };
+    if (mode === 'hold') {
+      const fromLine = me.hold.source === 'waitlist';
+      const paying = pendingPay === me.hold.id;
+      s.tag = fromLine ? "you're up — from the line" : 'held for you';
+      s.title = paying ? 'paying…' : fromLine ? 'a pair is yours to pay for.' : 'your pair is on hold.';
+      s.text = paying ? 'waiting for the payment provider to confirm. this usually takes a few seconds.'
+        : `pay ${price} before the timer ends, or the pair goes to the next person.`;
+      s.primary = { label: paying ? 'processing…' : `pay ${price}`, action: 'pay', disabled: paying };
+      s.secondary = paying ? null : { label: 'release it', action: 'release' };
+      s.bar = true;
+    } else if (outcome) {
+      s.tag = outcome.tag; s.title = outcome.title; s.text = outcome.text; s.big = outcome.big;
+      if (canBuyMore && !soldOut) s.primary = { label: outcome.mode === 'paid' ? 'hold another pair' : 'hold a pair', action: 'buy' };
+      else if (canBuyMore && soldOut && !me.position) s.primary = { label: outcome.mode === 'paid' ? 'join the line for another' : 'join the line', action: 'join' };
+      s.secondary = { label: 'ok', action: 'dismiss' };
+    } else if (mode === 'done') {
+      s.tag = 'limit reached'; s.title = `you've got your ${p.maxPerUser}.`; s.text = `that's the max per person for this drop. enjoy them.`;
+      s.big = `${me.bought}/${p.maxPerUser}`;
+    } else if (mode === 'line') {
+      s.tag = 'in line'; s.title = me.position === 1 ? "you're next." : `${me.position - 1} ahead of you.`;
+      s.text = `when a hold runs out, the first person in line gets that pair automatically, with ${mins} to pay. keep this tab open.`;
+      s.big = '#' + me.position;
+      s.secondary = { label: 'leave the line', action: 'leave' };
+    } else if (mode === 'soldout') {
+      s.tag = 'sold out'; s.title = p.sold >= p.total ? 'every pair is sold.' : 'all pairs are taken — for now.';
+      s.text = p.sold >= p.total ? 'this drop is over. thanks for coming.'
+        : `${plural(p.held, 'pair is', 'pairs are')} on hold and might not get paid. join the line and you'll get the next one that frees up.`;
+      s.big = '0';
+      if (p.sold < p.total) s.primary = { label: 'join the line', action: 'join' };
+    } else {
+      s.tag = p.available <= 3 ? 'last few' : 'on sale';
+      s.title = 'ready when you are.';
+      s.text = `holding a pair keeps it yours for ${mins} while you pay.`;
+      s.big = price;
+      s.primary = { label: 'hold a pair', action: 'buy' };
+    }
+
+    const shownMode = mode === 'hold' ? holdMode() : mode;
+    if (shownMode !== lastMode) {
+      stage.classList.remove('enter');
+      void stage.offsetWidth;
+      stage.classList.add('enter');
+      lastMode = shownMode;
+    }
+    stage.dataset.mode = shownMode;
+    $('stageTag').textContent = s.tag;
+    $('stageTitle').textContent = s.title;
+    $('stageText').textContent = s.text;
+    $('stageBar').hidden = !s.bar;
+    if (mode !== 'hold') $('stageBig').textContent = s.big;
+    $('stageBig').classList.toggle('word', mode !== 'hold' && /[a-z]/.test(s.big));
+
+    const pb = $('primaryBtn'), sb = $('secondaryBtn');
+    pb.hidden = !s.primary;
+    if (s.primary) {
+      $('primaryLabel').textContent = s.primary.label;
+      pb.dataset.action = s.primary.action;
+      pb.disabled = !!s.primary.disabled;
+    }
+    sb.hidden = !s.secondary;
+    if (s.secondary) { sb.textContent = s.secondary.label; sb.dataset.action = s.secondary.action; }
+    $('demoWrap').hidden = !(demo && mode === 'hold' && pendingPay !== me.hold?.id);
+
+    // ---- supporting tiles ----
+    $('tStock').classList.toggle('soldout', soldOut);
+    $('available').textContent = p.available;
+    $('stockState').textContent = soldOut ? 'sold out' : p.available <= 3 ? 'last few' : 'on sale';
+    $('stockFoot').textContent = `of ${p.total} · ${p.held} held · ${p.sold} sold`;
+
+    $('lineBig').textContent = p.waiting;
+    $('lineFoot').textContent = me.position ? `waiting · you're #${me.position}`
+      : soldOut || p.waiting ? (p.waiting === 1 ? 'person waiting' : 'people waiting') : 'opens when sold out';
+
+    $('bought').textContent = me.bought;
+    $('maxPer').textContent = p.maxPerUser;
+    $('mineState').textContent = me.bought >= p.maxPerUser ? 'limit reached' : me.bought ? 'paid' : 'none yet';
+
+    // ---- board ----
+    const slots = $('slots');
+    if (slots.children.length !== p.total) {
+      slots.innerHTML = '';
+      for (let i = 0; i < p.total; i++) slots.append(Object.assign(document.createElement('div'), { className: 'slot' }));
+    }
+    [...slots.children].forEach((el, i) => {
+      el.className = 'slot' + (i < p.sold ? ' sold' : i < p.sold + p.held ? ' held' : '');
+    });
+    const summary = `${p.sold} sold · ${p.held} held · ${p.available} free`;
+    $('boardCount').textContent = summary;
+    slots.setAttribute('aria-label', `${p.total} pairs: ${summary}`);
+
+    tick();
+  }
+
+  function holdMode() {
+    const hold = state && state.me.hold;
+    if (!hold) return 'hold';
+    const left = new Date(hold.expiresAt).getTime() - now();
+    return left < 60_000 ? 'urgent' : 'hold';
+  }
+
+  function tick() {
+    if (!state) return;
+    const hold = state.me.hold;
+    if (!hold) {
+      document.title = state.me.position ? `#${state.me.position} in line · sneakdrop` : 'sneakdrop';
+      return;
+    }
+    const total = state.product.holdSeconds * 1000;
+    const left = Math.max(0, new Date(hold.expiresAt).getTime() - now());
+    const secs = Math.ceil(left / 1000);
+    const clock = `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}`;
+    $('stageBig').textContent = clock;
+    $('holdBar').style.transform = `scaleX(${Math.min(1, left / total)})`;
+    document.title = `${clock} to pay · sneakdrop`;
+
+    const m = holdMode();
+    const stage = $('stage');
+    if (stage.dataset.mode !== m) {
+      stage.dataset.mode = m;
+      lastMode = m;
+    }
+    if (m === 'urgent' && pendingPay !== hold.id) {
+      $('stageTitle').textContent = left === 0 ? 'time is up…' : 'under a minute — pay now.';
+    }
+    for (const t of [60, 30, 10]) {
+      if (secs <= t && secs > 0 && !warned[t] && pendingPay !== hold.id) {
+        warned[t] = true;
+        if (secs > t - 2) announce(`${plural(t, 'second', 'seconds')} left to pay.`);
+      }
+    }
+  }
+  setInterval(tick, 250);
+
+  // ---------- live connection ----------
+  let pollTimer = null;
+  function setLive(mode) {
+    const dot = $('liveDot');
+    dot.className = 'dot' + (mode === 'live' ? ' ping' : '');
+    dot.style.background = mode === 'live' ? '#16a34a' : mode === 'polling' ? 'var(--orange)' : 'var(--red)';
+    $('liveText').textContent = mode;
+    $('syncInfo').textContent = mode === 'live' ? 'updates the moment anything changes'
+      : mode === 'polling' ? 'reconnecting · refreshing every 2s' : 'offline · trying again';
+  }
+  async function refresh() {
+    try {
+      const r = await fetch('/state?userId=' + encodeURIComponent(userId));
+      if (r.ok) apply(await r.json());
+      else setLive('offline');
+    } catch { setLive('offline'); }
+  }
+  function startPolling() {
+    if (pollTimer) return;
+    setLive('polling');
+    pollTimer = setInterval(refresh, 2000);
+  }
+  function stopPolling() { clearInterval(pollTimer); pollTimer = null; }
+  function connect() {
+    if (!('EventSource' in window)) return startPolling();
+    const es = new EventSource('/events?userId=' + encodeURIComponent(userId));
+    es.addEventListener('state', (e) => { stopPolling(); setLive('live'); apply(JSON.parse(e.data)); });
+    es.onerror = () => startPolling(); // EventSource retries by itself; poll meanwhile
+  }
+  connect();
+  refresh();
+
+  // ---------- actions ----------
+  const ERR = {
+    ALREADY_HOLDING: 'you already hold a pair.',
+    LIMIT_REACHED: "you've reached the max per person.",
+    NOT_SOLD_OUT: 'a pair just freed up — hold it instead.',
+    NOT_IN_LINE: "you're not in line any more.",
+    HOLD_EXPIRED: 'too late — that hold already expired.',
+    HOLD_NOT_ACTIVE: 'that hold is no longer active.',
+    HOLD_NOT_FOUND: "that hold isn't yours.",
+  };
+  async function api(method, url, body) {
+    const r = await fetch(url, { method, headers: { 'content-type': 'application/json' }, body: JSON.stringify({ userId, ...body }) });
+    const json = await r.json().catch(() => ({}));
+    return { status: r.status, json };
+  }
+
+  const ACTIONS = {
+    async buy() {
+      const { status, json } = await api('POST', '/buy');
+      outcome = null;
+      if (status === 201) return;
+      if (json.soldOut) say(json.position ? `sold out — you're #${json.position} in line.` : 'just missed it — every pair is taken. join the line for the next one.', 'err');
+      else say(ERR[json.error] || "couldn't hold a pair. try again.", 'err');
+    },
+    async pay() {
+      const hold = state && state.me.hold;
+      if (!hold) return;
+      const { status, json } = await api('POST', `/holds/${hold.id}/pay`, $('forceFail').checked ? { outcome: 'failed' } : {});
+      if (status === 202) {
+        pendingPay = hold.id;
+        log('payment sent', 'ink');
+      } else say(ERR[json.error] || "payment couldn't start. try again.", 'err');
+    },
+    async release() {
+      const hold = state && state.me.hold;
+      if (!hold) return;
+      iCancelled = hold.id;
+      const { status, json } = await api('DELETE', `/holds/${hold.id}`);
+      if (status === 200) say('released — the pair went back.');
+      else say(ERR[json.error] || "couldn't release it.", 'err');
+    },
+    async join() {
+      const { status, json } = await api('POST', '/waitlist');
+      outcome = null;
+      if (status === 201 || status === 200) say('');
+      else say(ERR[json.error] || "couldn't join the line.", 'err');
+    },
+    async leave() {
+      const { status, json } = await api('DELETE', '/waitlist');
+      if (status === 200) say('you left the line.');
+      else say(ERR[json.error] || "couldn't leave the line.", 'err');
+    },
+    async dismiss() { outcome = null; say(''); },
+  };
+  for (const btn of [$('primaryBtn'), $('secondaryBtn')]) {
+    btn.addEventListener('click', async () => {
+      const fn = ACTIONS[btn.dataset.action];
+      if (!fn) return;
+      btn.disabled = true;
+      try { await fn(); } catch { say('network hiccup — try again.', 'err'); }
+      finally { btn.disabled = false; await refresh(); render(); }
+    });
+  }
+})();
+</script>
+<div class="custom-cursor" id="cursorDot" style="left:-100px;top:-100px"></div>
+<div class="custom-cursor-ring" id="cursorRing" style="left:-100px;top:-100px"></div>
+
+<script>
+// Custom cursor: dot follows the mouse, ring eases after it, both grow over
+// interactive things, hidden while scrolling. Off on touch screens.
+(() => {
+  if (matchMedia('(pointer: coarse)').matches) return;
+  const dot = document.getElementById('cursorDot');
+  const ring = document.getElementById('cursorRing');
+  const HOVER = 'a, button, [role="button"], input, textarea, select, label';
+  let mouseX = -100, mouseY = -100, ringX = -100, ringY = -100;
+  let scrolling = false, scrollTimer, ready = false, hovering = false;
+
+  document.addEventListener('mousemove', (e) => {
+    mouseX = e.clientX; mouseY = e.clientY;
+    dot.style.left = mouseX + 'px'; dot.style.top = mouseY + 'px';
+    if (scrolling) { scrolling = false; dot.style.opacity = '1'; ring.style.opacity = hovering ? '0.25' : '0.15'; }
+    if (!ready) { ready = true; document.documentElement.classList.add('cursor-ready'); }
+  });
+
+  addEventListener('scroll', () => {
+    scrolling = true;
+    dot.style.opacity = '0'; ring.style.opacity = '0';
+    ringX = mouseX; ringY = mouseY;
+    clearTimeout(scrollTimer);
+    scrollTimer = setTimeout(() => {
+      scrolling = false; dot.style.opacity = '1'; ring.style.opacity = hovering ? '0.25' : '0.15';
+    }, 150);
+  }, true);
+
+  const grow = (on) => {
+    hovering = on;
+    dot.style.setProperty('--s', on ? 1.5 : 1);        // 8px → 12px, as in the reference
+    ring.style.setProperty('--s', on ? 36 / 28 : 1);   // 28px → 36px
+    if (!scrolling) ring.style.opacity = on ? '0.25' : '0.15';
+  };
+  // delegation instead of per-element listeners, so elements added later work too
+  document.addEventListener('mouseover', (e) => grow(!!e.target.closest(HOVER)));
+  document.addEventListener('mouseleave', () => grow(false));
+
+  (function animate() {
+    ringX += (mouseX - ringX) * 0.25;
+    ringY += (mouseY - ringY) * 0.25;
+    ring.style.left = ringX + 'px'; ring.style.top = ringY + 'px';
+    requestAnimationFrame(animate);
+  })();
+})();
+</script>
+</body>
+</html>
