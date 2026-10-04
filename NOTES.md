@@ -1,5 +1,7 @@
 # Sneaker Drop — Notes
 
+[![ci](https://github.com/Arpit-oo/sneakdrop-assignment/actions/workflows/ci.yml/badge.svg)](https://github.com/Arpit-oo/sneakdrop-assignment/actions/workflows/ci.yml)
+
 20 pairs, thousands of simultaneous Buy clicks, never oversell.
 
 **Core idea:** the database is the only source of truth, and every decision that touches stock happens inside one Postgres transaction that holds a lock on the product row. API servers keep no state, so you can run as many as you like.
