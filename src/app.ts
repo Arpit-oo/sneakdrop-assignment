@@ -5,6 +5,7 @@ import { pool } from './db/pool.js';
 import { DomainError } from './domain/errors.js';
 import { FakePay } from './fakepay/provider.js';
 import { SaleHub } from './live/hub.js';
+import { adminRoutes } from './routes/admin.js';
 import { buyRoutes } from './routes/buy.js';
 import { paymentRoutes } from './routes/payments.js';
 import { stateRoutes } from './routes/state.js';
@@ -24,8 +25,11 @@ export function defaultFakePay(log?: (msg: string, data?: Record<string, unknown
   });
 }
 
-export function buildServer(opts: { logger?: boolean; fakepay?: FakePay } = {}) {
-  const app = Fastify({ logger: opts.logger === false ? false : { level: config.LOG_LEVEL } });
+export function buildServer(opts: { logger?: boolean; fakepay?: FakePay; adminToken?: string } = {}) {
+  const app = Fastify({
+    logger: opts.logger === false ? false : { level: config.LOG_LEVEL },
+    trustProxy: true, // behind Render's / any load balancer: real client IP in logs
+  });
   const fakepay = opts.fakepay ?? defaultFakePay((msg, data) => app.log.warn(data, msg));
   const hub = new SaleHub();
 
@@ -53,6 +57,8 @@ export function buildServer(opts: { logger?: boolean; fakepay?: FakePay } = {}) 
   app.register(waitlistRoutes);
   app.register(paymentRoutes, { fakepay });
   app.register(stateRoutes, { hub });
+  const adminToken = 'adminToken' in opts ? opts.adminToken : config.ADMIN_TOKEN;
+  if (adminToken) app.register(adminRoutes, { token: adminToken });
 
   // let in-flight fake webhooks finish before the pool closes
   app.addHook('onClose', async () => {

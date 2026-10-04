@@ -9,6 +9,8 @@ const schema = z.object({
   HOLD_SECONDS: z.coerce.number().int().positive().default(300),
   MAX_PER_USER: z.coerce.number().int().positive().default(2),
   WEBHOOK_SECRET: z.string().min(1).default('change-me'),
+  // Enables POST /admin/reset (reset the sale / change rules for a demo). Unset = route doesn't exist.
+  ADMIN_TOKEN: z.string().min(16).optional(),
   // Expiry sweep period. 0 = don't run the worker inside the API process.
   EXPIRY_INTERVAL_MS: z.coerce.number().int().nonnegative().default(1000),
 

@@ -225,6 +225,8 @@ async function main() {
       (SELECT COALESCE(MAX(c), 0)::int FROM (SELECT COUNT(*) c FROM orders WHERE product_id = $1 GROUP BY user_id) x)
         AS max_orders_per_user,
       (SELECT COUNT(*)::int FROM payment_events WHERE outcome IS NULL) AS unprocessed_events,
+      (SELECT COUNT(DISTINCT payment_id)::int FROM payment_events WHERE outcome LIKE 'refund_required%') AS refunds_owed,
+      (SELECT COUNT(*)::int FROM refunds WHERE status = 'refunded') AS refunds_sent,
       (SELECT COUNT(*)::int FROM holds WHERE product_id = $1) AS holds_total,
       (SELECT COUNT(*)::int FROM holds WHERE product_id = $1 AND source = 'waitlist') AS holds_from_line
   `);
@@ -254,6 +256,7 @@ async function main() {
     ['no order without paid hold', inv.order_without_paid === 0, String(inv.order_without_paid)],
     [`nobody bought more than ${MAX}`, inv.max_orders_per_user <= MAX, `max ${inv.max_orders_per_user}`],
     ['every webhook event processed', inv.unprocessed_events === 0, String(inv.unprocessed_events)],
+    ['every late / double payment refunded', inv.refunds_sent === inv.refunds_owed, `${inv.refunds_sent} / ${inv.refunds_owed}`],
     ['sale settled (no active holds)', s.held === 0, `${s.held} active`],
   ];
 

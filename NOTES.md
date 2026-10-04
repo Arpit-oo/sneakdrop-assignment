@@ -68,7 +68,7 @@ Check the API is up: `curl localhost:3000/health` → `{"ok":true}`
 | `npm run migrate` | Apply SQL migrations (safe to run again) |
 | `npm run seed` | Create or update the product from `STOCK` / `HOLD_SECONDS` / `MAX_PER_USER` |
 | `npm run db:reset` | Delete all sale activity (holds, orders, line, payment events). Keeps the product |
-| `npm test` | 94 tests against a real Postgres (`sneakdrop_test` database) |
+| `npm test` | 98 tests against a real Postgres (`sneakdrop_test` database) |
 | `npm run load` | Load test + correctness check (see below). **Wipes sale data in `DATABASE_URL`** |
 | `npm run typecheck` | `tsc --noEmit` |
 
@@ -84,7 +84,8 @@ Check the API is up: `curl localhost:3000/health` → `{"ok":true}`
 | `HOLD_SECONDS` | `300` | How long a hold lasts (applied by `npm run seed`) |
 | `MAX_PER_USER` | `2` | Max pairs one person can buy (applied by `npm run seed`) |
 | `EXPIRY_INTERVAL_MS` | `1000` | How often the expiry worker runs. `0` = don't run it inside the API |
-| `WEBHOOK_SECRET` | `change-me` | Shared secret used to sign and check payment webhooks |
+| `WEBHOOK_SECRET` | `change-me` | Shared secret used to sign and check payment webhooks (warns at startup if left default in production) |
+| `ADMIN_TOKEN` | unset | Enables `POST /admin/reset` (see API). Unset = the route doesn't exist |
 | `WEBHOOK_URL` | `http://localhost:$PORT/webhooks/payment` | Where the fake provider sends webhooks |
 | `FAKEPAY_MAX_DELAY_MS` | `3000` | Each webhook is delayed by a random 0..N ms |
 | `FAKEPAY_DUPLICATE_RATE` | `0.3` | Chance the final event is sent twice |
@@ -113,6 +114,7 @@ There's no login. Every request just says who the user is (`userId`), which is e
 | `GET /state` | `?userId=` | Everything the page shows: stock counts, your hold, bought, place in line, last payment |
 | `GET /events` | `?userId=` | Server-Sent Events stream: pushes a fresh `state` whenever anything changes |
 | `GET /health` | | `{ok:true}` |
+| `POST /admin/reset` | header `authorization: Bearer $ADMIN_TOKEN`, body `{stock?, holdSeconds?, maxPerUser?}` | Wipes sale activity and applies new rules. Open pages refresh. Only exists when `ADMIN_TOKEN` is set |
 
 Example session:
 
@@ -162,7 +164,7 @@ src/
   fakepay/provider.ts       chaotic fake payment company
   routes/                   HTTP layer only
   workers/expiry.ts         background expiry
-tests/                      94 integration tests against real Postgres
+tests/                      98 integration tests against real Postgres
 scripts/load.ts             load test + correctness check
 ```
 
@@ -281,11 +283,12 @@ Look is borrowed from a previous project of mine: warm paper background, Bricola
 
 CI (GitHub Actions, `.github/workflows/ci.yml`) runs the typecheck and all tests against a real Postgres on every push. It also builds the Docker image and smoke-tests `docker compose up`.
 
-`npm test` runs 94 integration tests against real Postgres (no mocks for the database):
+`npm test` runs 98 integration tests against real Postgres (no mocks for the database):
 
 | File | Covers |
 |---|---|
 | `schema.test.ts` | DB safety net alone: 500 raw concurrent inserts → 20 holds, unique/limit/check constraints, webhook dedupe |
+| `admin.test.ts` | admin reset: absent without token, 401 on bad token, wipes + applies rules, validation |
 | `state.test.ts` | `/state` snapshot (incl. overdue holds hidden), page served, SSE pushes on own and foreign writes (NOTIFY trigger) |
 | `buy.test.ts` | 5000 users at once through HTTP → exactly 20 holds, same user ×50 → 1 hold, limit of 2, lazy expiry, cancel rules, sold-out fast path |
 | `expiry.test.ts` | worker expires only overdue holds, 5 workers at once → each hold expired exactly once, skips locked product, survives errors |
