@@ -35,7 +35,7 @@ This starts Postgres and the app, runs the migrations, creates the product (20 p
 - Free tier: the app sleeps after ~15 minutes idle, so the first request takes ~30 s.
 - Free Render Postgres expires after 30 days.
 
-Not Vercel, on purpose. This app needs four always-on pieces:
+Not Vercel, on purpose. This app needs three always-on pieces:
 - an always-on process (the expiry worker)
 - a long-lived database listener + streaming connections (live push)
 - a payment simulator that answers seconds after the request
