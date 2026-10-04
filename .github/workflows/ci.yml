@@ -1,0 +1,49 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: sneak
+          POSTGRES_PASSWORD: sneak
+          POSTGRES_DB: sneakdrop_test
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U sneak -d sneakdrop_test"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 30
+    env:
+      DATABASE_URL: postgres://sneak:sneak@localhost:5433/sneakdrop_test
+      TEST_DATABASE_URL: postgres://sneak:sneak@localhost:5433/sneakdrop_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: docker compose up (one-command start works)
+        run: docker compose up -d --build --wait
+      - name: smoke test
+        run: |
+          curl -fsS localhost:3000/health
+          curl -fsS -X POST localhost:3000/buy -H 'content-type: application/json' -d '{"userId":"ci"}'
+          curl -fsS localhost:3000/ | grep -q sneakdrop
+      - if: always()
+        run: docker compose logs app | tail -50

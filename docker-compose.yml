@@ -1,0 +1,44 @@
+# `docker compose up` runs everything: Postgres + the app on http://localhost:3000
+# For local development, start only the database: `docker compose up -d --wait db`
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: sneak
+      POSTGRES_PASSWORD: sneak
+      POSTGRES_DB: sneakdrop
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./docker/init-test-db.sql:/docker-entrypoint-initdb.d/init-test-db.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sneak -d sneakdrop"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+
+  app:
+    build: .
+    init: true
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://sneak:sneak@db:5432/sneakdrop
+      PORT: "3000"
+      WEBHOOK_URL: http://127.0.0.1:3000/webhooks/payment
+      WEBHOOK_SECRET: ${WEBHOOK_SECRET:-change-me}
+      STOCK: ${STOCK:-20}
+      HOLD_SECONDS: ${HOLD_SECONDS:-300}
+      MAX_PER_USER: ${MAX_PER_USER:-2}
+    ports:
+      - "${APP_PORT:-3000}:3000"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/health || exit 1"]
+      interval: 3s
+      timeout: 3s
+      retries: 40
+
+volumes:
+  pgdata:
