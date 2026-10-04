@@ -27,6 +27,21 @@ This starts Postgres and the app, runs the migrations, creates the product (20 p
 - Use a different port: `APP_PORT=8080 docker compose up --build`.
 - Run a quicker demo sale: `STOCK=2 HOLD_SECONDS=30 docker compose up --build`.
 
+## Hosted
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/Arpit-oo/sneakdrop-assignment)
+
+`render.yaml` sets up the app (from the same `Dockerfile`) plus a managed Postgres 16. The app migrates and seeds itself on start.
+- Free tier: the app sleeps after ~15 minutes idle, so the first request takes ~30 s.
+- Free Render Postgres expires after 30 days.
+
+Not Vercel, on purpose. This app needs four always-on pieces:
+- an always-on process (the expiry worker)
+- a long-lived database listener + streaming connections (live push)
+- a payment simulator that answers seconds after the request
+
+Serverless functions don't provide those.
+
 ## How to run for development
 
 ```bash
