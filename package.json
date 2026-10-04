@@ -1,0 +1,41 @@
+{
+  "name": "sneakdrop",
+  "version": "1.0.0",
+  "description": "Limited sneaker drop backend: holds, waitlist, fake payments",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "start": "tsx src/server.ts",
+    "migrate": "tsx src/db/migrate.ts",
+    "seed": "tsx src/db/seed.ts",
+    "db:reset": "tsx src/db/reset.ts",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "worker": "tsx src/workers/expiry.ts",
+    "load": "tsx scripts/load.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/timebasehq/sneakdrop-assignment.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/timebasehq/sneakdrop-assignment/issues"
+  },
+  "homepage": "https://github.com/timebasehq/sneakdrop-assignment#readme",
+  "dependencies": {
+    "dotenv": "^18.0.4",
+    "fastify": "^5.12.5",
+    "pg": "^8.23.0",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.3",
+    "@types/pg": "^8.23.1",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.3"
+  },
+  "private": true
+}
