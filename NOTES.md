@@ -29,6 +29,8 @@ This starts Postgres and the app, runs the migrations, creates the product (20 p
 
 ## Hosted
 
+**Live: https://sneakdrop-3otn.onrender.com/?user=alice** (open a second tab with `?user=bob`, add `&demo=1` for the "make this payment fail" switch). Free tier, so the first visit after idling can take ~30 s.
+
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/Arpit-oo/sneakdrop-assignment)
 
 `render.yaml` sets up the app (from the same `Dockerfile`) plus a managed Postgres 16. The app migrates and seeds itself on start.
