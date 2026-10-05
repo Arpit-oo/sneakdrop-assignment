@@ -13,7 +13,7 @@ Plan: [PLAN.md](PLAN.md). UI (Phase 6) deferred — backend first.
 | 5 Fake pay + webhook | ✅ done |
 | 6 UI page | ✅ done |
 | 7 Load test/proof | ✅ done |
-| 8 Docs + video | 🟡 docs done, video pending |
+| 8 Docs + video | ✅ done |
 
 ---
 
@@ -164,7 +164,7 @@ Tests `tests/payments.test.ts` — **26 new, 81/81 total pass (2 runs)**, typech
 - After: **556 req/s**, p50 699ms (5000 users / 2 inst); **663 req/s** (10000 / 3 inst). Docker-on-Windows DB.
 - New test: after sell-out, holder still gets ALREADY_HOLDING, limit user LIMIT_REACHED (not soldOut). **82/82 pass.**
 
-### Results (for video)
+### Load test results
 | run | burst | holds in burst | sold | orders==paid | max/user | late refunds | verdict |
 |---|---|---|---|---|---|---|---|
 | 5000 users, 2 inst | 556 req/s, p99 3.2s | 20 / 20 | 20 | 20==20 | 1 | 11 | ALL PASS |
@@ -175,14 +175,6 @@ Note: script acts on initial holds only after burst + line join → slow bursts 
 ## 2026-10-03 — Phase 8: Docs
 - `notes.md` → `NOTES.md` (README asks for NOTES.md; `git mv -f` staged — Windows is case-insensitive). Not committed.
 - NOTES.md: requirements, run steps, all commands, env var table, API table + curl, architecture ASCII + layout, rule-by-rule enforcement, webhook state machine table, tests table, load test sample output, trade-offs table. "Rule 5: status page" = placeholder until Phase 6.
-
-### Video outline (~6–8 min)
-1. Problem (30s): 51 sold vs 20. Invariant: held + sold ≤ 20, enforced by DB.
-2. Design (1.5m): product row lock + derived stock + trigger safety net; lock order; lazy+worker expiry; promotion in same txn → no line-jumping.
-3. Live demo (2m): 3 tabs (needs Phase 6 UI) — buy, countdown, sell out, join line, cancel → promotion, pay.
-4. Chaos payments (1.5m): `FAKEPAY_DUPLICATE_RATE=1 FAKEPAY_REORDER_RATE=1` → log shows paid / duplicate_event / ignored_pending; state machine table; late payment revive vs refund.
-5. Proof (1m): `npm test` 90 green; `npm run load` table — 5000 users, 2 instances, ALL CHECKS PASSED; mention 96 → 556 req/s fast-path fix.
-6. Trade-offs (30s): single-row lock ceiling, no auth, refunds recorded only, in-process provider.
 
 ## 2026-10-03 — Phase 6: Status page
 - Theme from `C:\code\et` (pavan web app): paper #f5f0e6 + grain, Bricolage Grotesque / Fraunces display numbers, 28px bento tiles (orange / white / blue / teal / charcoal), tilted stickers, pill buttons, uppercase eyebrows.

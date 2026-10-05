@@ -1,5 +1,6 @@
 > ## Submission
 > - **Live demo:** https://sneakdrop-3otn.onrender.com/?user=alice (open a 2nd tab as `?user=bob`; free tier, first load after idle can take ~30 s)
+> - **Video walkthrough:** https://www.loom.com/share/70c841858cf5465ca173fe9fdd4c3f70
 > - **How to run, design and trade-offs:** [NOTES.md](NOTES.md)
 > - **One-command start:** `docker compose up --build` → http://localhost:3000/?user=alice
 > - **Tests:** `npm test` (98 integration tests on real Postgres) · `npm run load` (5,000 buyers, invariant checks) · CI on every push
