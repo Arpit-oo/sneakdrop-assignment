@@ -11,7 +11,8 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "worker": "tsx src/workers/expiry.ts",
-    "load": "tsx scripts/load.ts"
+    "load": "tsx scripts/load.ts",
+    "demo:reset": "tsx scripts/demo-reset.ts"
   },
   "repository": {
     "type": "git",

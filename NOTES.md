@@ -67,6 +67,7 @@ Check the API is up: `curl localhost:3000/health` → `{"ok":true}`
 | `npm run worker` | Expiry worker on its own (use with `EXPIRY_INTERVAL_MS=0` on the API) |
 | `npm run migrate` | Apply SQL migrations (safe to run again) |
 | `npm run seed` | Create or update the product from `STOCK` / `HOLD_SECONDS` / `MAX_PER_USER` |
+| `npm run demo:reset` | Fresh demo sale: 2 pairs, 30 s holds (`npm run demo:reset -- 20 300` for normal). Works in any shell |
 | `npm run db:reset` | Delete all sale activity (holds, orders, line, payment events). Keeps the product |
 | `npm test` | 98 tests against a real Postgres (`sneakdrop_test` database) |
 | `npm run load` | Load test + correctness check (see below). **Wipes sale data in `DATABASE_URL`** |
